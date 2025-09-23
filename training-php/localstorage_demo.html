@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>LocalStorage Demo</title>
+    <?php /* using same CSS assets if desired */ ?>
+    <link rel="stylesheet" href="public/css/bootstrap.min-3.3.7.css">
+    <link rel="stylesheet" href="public/css/styles.css">
+    <style>
+        body { padding: 20px; }
+    </style>
+    <script>
+    function saveKV() {
+        var k = document.getElementById('k').value;
+        var v = document.getElementById('v').value;
+        localStorage.setItem(k, v);
+        render();
+    }
+    function removeK() {
+        var k = document.getElementById('k').value;
+        localStorage.removeItem(k);
+        render();
+    }
+    function clearAll() {
+        localStorage.clear();
+        render();
+    }
+    function render() {
+        var out = document.getElementById('out');
+        var rows = [];
+        for (var i = 0; i < localStorage.length; i++) {
+            var key = localStorage.key(i);
+            rows.push('<tr><td>' + key + '</td><td>' + localStorage.getItem(key) + '</td></tr>');
+        }
+        out.innerHTML = rows.join('');
+        document.getElementById('count').textContent = localStorage.length;
+    }
+    window.onload = render;
+    </script>
+    <noscript>Enable JavaScript to use localStorage demo.</noscript>
+    <meta http-equiv="Cache-Control" content="no-store"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline'">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+</head>
+<body>
+    <div class="container">
+        <h3>LocalStorage Demo</h3>
+        <div class="form-inline">
+            <input id="k" class="form-control" placeholder="key"/>
+            <input id="v" class="form-control" placeholder="value"/>
+            <button class="btn btn-primary" onclick="saveKV()">Save</button>
+            <button class="btn btn-warning" onclick="removeK()">Remove</button>
+            <button class="btn btn-danger" onclick="clearAll()">Clear all</button>
+            <a class="btn btn-default" href="login.php">Back</a>
+        </div>
+        <p>Total items: <span id="count">0</span></p>
+        <table class="table table-bordered">
+            <thead><tr><th>Key</th><th>Value</th></tr></thead>
+            <tbody id="out"></tbody>
+        </table>
+    </div>
+    <script src="public/js/jquery-2.1.4.min.js"></script>
+    <script src="public/js/bootstrap.min-3.3.7.js"></script>
+</body>
+<!-- Simple demo page for localStorage set/get/list -->
+</html>
+
+

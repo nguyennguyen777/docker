@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>JWT + Redis Auth Demo</title>
+    <link rel="stylesheet" href="public/css/bootstrap.min-3.3.7.css">
+    <style>body{padding:20px}</style>
+</head>
+<body>
+<div class="container">
+    <h3>JWT + Redis Auth Demo</h3>
+    <div class="form-inline">
+        <input id="u" class="form-control" placeholder="username"/>
+        <input id="p" class="form-control" placeholder="password" type="password"/>
+        <button class="btn btn-primary" onclick="login()">Login</button>
+        <button class="btn btn-warning" onclick="me()">Call /api_me</button>
+        <button class="btn btn-danger" onclick="logout()">Logout</button>
+        <a class="btn btn-default" href="login.php">Back</a>
+    </div>
+    <p>Token in localStorage: <code id="tok"></code></p>
+    <pre id="out"></pre>
+</div>
+<script>
+const key = 'demo_jwt_token';
+function setToken(t){ localStorage.setItem(key, t); document.getElementById('tok').textContent = t || '(none)'; }
+function getToken(){ return localStorage.getItem(key)||''; }
+function show(x){ document.getElementById('out').textContent = typeof x==='string'?x:JSON.stringify(x,null,2); }
+async function login(){
+  const r = await fetch('api_login.php', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ username: document.getElementById('u').value, password: document.getElementById('p').value }) });
+  const j = await r.json().catch(()=>({}));
+  if(r.ok && j.token){ setToken(j.token); show(j); } else { show(j); }
+}
+async function me(){
+  const t = getToken(); if(!t){ return show('No token'); }
+  const r = await fetch('api_me.php', { headers:{ Authorization: 'Bearer '+t }});
+  show(await r.json().catch(()=>({})));
+}
+async function logout(){
+  const t = getToken(); if(!t){ return show('No token'); }
+  const r = await fetch('api_logout.php', { method:'POST', headers:{ Authorization: 'Bearer '+t }});
+  setToken(''); show(await r.json().catch(()=>({})));
+}
+document.addEventListener('DOMContentLoaded', ()=>{ document.getElementById('tok').textContent = getToken()||'(none)'; });
+</script>
+</body>
+</html>
+
+
