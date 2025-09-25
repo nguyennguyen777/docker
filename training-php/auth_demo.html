@@ -49,7 +49,8 @@ async function login(){
     method:'POST', 
     headers:{
       'Content-Type':'application/json',
-      'X-CSRF-Token': csrfToken
+      'X-CSRF-Token': csrfToken,
+      'X-Requested-With': 'XMLHttpRequest'
     }, 
     body: JSON.stringify({ 
       username: document.getElementById('u').value, 
@@ -78,7 +79,8 @@ async function logout(){
     method:'POST', 
     headers:{ 
       Authorization: 'Bearer '+t,
-      'X-CSRF-Token': csrfToken
+      'X-CSRF-Token': csrfToken,
+      'X-Requested-With': 'XMLHttpRequest'
     },
     body: JSON.stringify({ csrf_token: csrfToken })
   });

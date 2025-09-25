@@ -100,7 +100,8 @@ document.getElementById('protectedForm').addEventListener('submit', async functi
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-Token': csrfToken
+                'X-CSRF-Token': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify({
                 username: document.getElementById('username').value,
@@ -128,7 +129,8 @@ document.getElementById('unprotectedForm').addEventListener('submit', async func
         const response = await fetch('api_login.php', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
                 // No CSRF token - this will fail
             },
             body: JSON.stringify({
