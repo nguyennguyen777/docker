@@ -3,6 +3,7 @@
 session_start();
 
 require_once 'models/UserModel.php';
+require_once __DIR__.'/utils/Csrf.php';
 $userModel = new UserModel();
 
 $params = [];
@@ -56,9 +57,13 @@ $users = $userModel->getUsers($params);
                                 <a href="view_user.php?id=<?php echo $user['id'] ?>">
                                     <i class="fa fa-eye" aria-hidden="true" title="View"></i>
                                 </a>
-                                <a href="delete_user.php?id=<?php echo $user['id'] ?>">
-                                    <i class="fa fa-eraser" aria-hidden="true" title="Delete"></i>
-                                </a>
+                                <form action="delete_user.php" method="POST" style="display:inline">
+                                    <input type="hidden" name="id" value="<?php echo $user['id'] ?>">
+                                    <?php echo Csrf::getTokenInput(); ?>
+                                    <button type="submit" class="btn btn-link p-0" onclick="return confirm('Delete user #<?php echo $user['id'] ?>?')">
+                                        <i class="fa fa-eraser" aria-hidden="true" title="Delete"></i>
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                     <?php } ?>
