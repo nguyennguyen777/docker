@@ -8,9 +8,23 @@ abstract class BaseModel {
     public function __construct() {
 
         if (!isset(self::$_connection)) {
-            self::$_connection = mysqli_connect(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT);
-            if (self::$_connection->connect_errno) {
-                printf("Connect failed");
+            // Retry connection to handle container startup race conditions
+            $maxAttempts = 10;
+            $attempt = 0;
+            $lastError = '';
+            while ($attempt < $maxAttempts) {
+                $attempt++;
+                self::$_connection = @mysqli_connect(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT);
+                if (self::$_connection && !self::$_connection->connect_errno) {
+                    break;
+                }
+                $lastError = function_exists('mysqli_connect_error') ? mysqli_connect_error() : 'unknown error';
+                // Wait 1s before next attempt
+                sleep(1);
+            }
+            if (!self::$_connection || self::$_connection->connect_errno) {
+                header('Content-Type: text/plain; charset=utf-8');
+                printf("Connect failed after %d attempts to %s:%d (%s)\n", $attempt, DB_HOST, DB_PORT, $lastError);
                 exit();
             }
         }
