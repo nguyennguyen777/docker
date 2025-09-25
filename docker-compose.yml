@@ -2,20 +2,29 @@ version: '3.8'
 
 volumes:
   mysql-data:
+  redis-data:
 
 services:
   web-backend:
     build: ./config/backend
     container_name: web-backend
     ports:
-      - "8080:80"
+      - "8081:80"
     volumes:
       - ./training-php:/var/www/html
       - ./config/backend/php.ini:/usr/local/etc/php/php.ini
       - ./config/httpd_security.conf:/etc/apache2/conf-available/security.conf
+      - ./init-db.sh:/init-db.sh
     working_dir: /var/www/html
     environment:
       APP_ENV: local
+      DB_HOST: web-mysql
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE}
+      DB_PORT: 3306
+      REDIS_HOST: web-redis
+      REDIS_PORT: 6379
     depends_on:
       - web-mysql
       - web-redis
@@ -29,8 +38,8 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root123}
+      MYSQL_DATABASE: ${DB_DATABASE:-app_web1}
       # Do not set MYSQL_USER/MYSQL_PASSWORD for root; use only MYSQL_ROOT_PASSWORD
 
   web-redis:
@@ -39,14 +48,17 @@ services:
     command: redis-server --appendonly yes
     ports:
       - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: always
 
   phpmyadmin:
     container_name: web-phpmyadmin
     image: phpmyadmin/phpmyadmin
     ports:
-      - "8082:80"
+      - "8083:80"
     environment:
       PMA_HOST: web-mysql
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root123}
     depends_on:
       - web-mysql

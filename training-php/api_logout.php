@@ -30,3 +30,6 @@ if (class_exists('Redis')) {
 echo json_encode(['ok' => true]);
 
 
+
+
+
