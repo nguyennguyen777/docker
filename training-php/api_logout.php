@@ -2,10 +2,18 @@
 // API: POST Authorization: Bearer <token> -> revoke session
 header('Content-Type: application/json');
 require_once __DIR__.'/utils/Jwt.php';
+require_once __DIR__.'/utils/Csrf.php';
 
 $secret = getenv('JWT_SECRET') ?: 'dev-secret';
 $redisHost = getenv('REDIS_HOST') ?: 'web-redis';
 $redisPort = (int)(getenv('REDIS_PORT') ?: 6379);
+
+// Validate CSRF token for AJAX requests
+if (!Csrf::validateAjaxRequest()) {
+    http_response_code(403);
+    echo json_encode(['error' => 'csrf_token_invalid']);
+    exit;
+}
 
 $auth = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
 if (!preg_match('/Bearer\s+(.*)$/i', $auth, $m)) {

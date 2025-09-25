@@ -2,6 +2,7 @@
 // API: GET with Authorization: Bearer <token> -> returns user info
 header('Content-Type: application/json');
 require_once __DIR__.'/utils/Jwt.php';
+require_once __DIR__.'/utils/Csrf.php';
 
 $secret = getenv('JWT_SECRET') ?: 'dev-secret';
 $redisHost = getenv('REDIS_HOST') ?: 'web-redis';

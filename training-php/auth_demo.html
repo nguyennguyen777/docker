@@ -22,25 +22,73 @@
 </div>
 <script>
 const key = 'demo_jwt_token';
+let csrfToken = '';
+
+// Get CSRF token from server
+async function getCsrfToken() {
+    try {
+        const response = await fetch('api_csrf.php');
+        const data = await response.json();
+        csrfToken = data.token;
+    } catch (e) {
+        console.error('Failed to get CSRF token:', e);
+    }
+}
+
 function setToken(t){ localStorage.setItem(key, t); document.getElementById('tok').textContent = t || '(none)'; }
 function getToken(){ return localStorage.getItem(key)||''; }
 function show(x){ document.getElementById('out').textContent = typeof x==='string'?x:JSON.stringify(x,null,2); }
+
 async function login(){
-  const r = await fetch('api_login.php', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ username: document.getElementById('u').value, password: document.getElementById('p').value }) });
+  if (!csrfToken) {
+    show('CSRF token not available');
+    return;
+  }
+  
+  const r = await fetch('api_login.php', { 
+    method:'POST', 
+    headers:{
+      'Content-Type':'application/json',
+      'X-CSRF-Token': csrfToken
+    }, 
+    body: JSON.stringify({ 
+      username: document.getElementById('u').value, 
+      password: document.getElementById('p').value,
+      csrf_token: csrfToken
+    }) 
+  });
   const j = await r.json().catch(()=>({}));
   if(r.ok && j.token){ setToken(j.token); show(j); } else { show(j); }
 }
+
 async function me(){
   const t = getToken(); if(!t){ return show('No token'); }
   const r = await fetch('api_me.php', { headers:{ Authorization: 'Bearer '+t }});
   show(await r.json().catch(()=>({})));
 }
+
 async function logout(){
+  if (!csrfToken) {
+    show('CSRF token not available');
+    return;
+  }
+  
   const t = getToken(); if(!t){ return show('No token'); }
-  const r = await fetch('api_logout.php', { method:'POST', headers:{ Authorization: 'Bearer '+t }});
+  const r = await fetch('api_logout.php', { 
+    method:'POST', 
+    headers:{ 
+      Authorization: 'Bearer '+t,
+      'X-CSRF-Token': csrfToken
+    },
+    body: JSON.stringify({ csrf_token: csrfToken })
+  });
   setToken(''); show(await r.json().catch(()=>({})));
 }
-document.addEventListener('DOMContentLoaded', ()=>{ document.getElementById('tok').textContent = getToken()||'(none)'; });
+
+document.addEventListener('DOMContentLoaded', async ()=>{ 
+  document.getElementById('tok').textContent = getToken()||'(none)';
+  await getCsrfToken();
+});
 </script>
 </body>
 </html>

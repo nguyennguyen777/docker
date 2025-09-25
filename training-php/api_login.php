@@ -3,6 +3,7 @@
 header('Content-Type: application/json');
 require_once __DIR__.'/models/UserModel.php';
 require_once __DIR__.'/utils/Jwt.php';
+require_once __DIR__.'/utils/Csrf.php';
 
 $secret = getenv('JWT_SECRET') ?: 'dev-secret';
 $ttl = (int)(getenv('JWT_TTL') ?: 3600);
@@ -10,6 +11,14 @@ $redisHost = getenv('REDIS_HOST') ?: 'web-redis';
 $redisPort = (int)(getenv('REDIS_PORT') ?: 6379);
 
 $input = $_POST ?: json_decode(file_get_contents('php://input'), true) ?: [];
+
+// Validate CSRF token for AJAX requests
+if (!Csrf::validateAjaxRequest()) {
+    http_response_code(403);
+    echo json_encode(['error' => 'csrf_token_invalid']);
+    exit;
+}
+
 $username = $input['username'] ?? '';
 $password = $input['password'] ?? '';
 

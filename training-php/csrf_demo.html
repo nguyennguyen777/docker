@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>CSRF Protection Demo</title>
+    <link rel="stylesheet" href="public/css/bootstrap.min-3.3.7.css">
+    <style>body{padding:20px}</style>
+</head>
+<body>
+<div class="container">
+    <h3>CSRF Protection Demo</h3>
+    <div class="alert alert-info">
+        <strong>CSRF Protection:</strong> This demo shows how CSRF tokens protect against cross-site request forgery attacks.
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <h4>Protected Form (with CSRF token)</h4>
+            <form id="protectedForm">
+                <div class="form-group">
+                    <label>Username:</label>
+                    <input type="text" id="username" class="form-control" value="admin">
+                </div>
+                <div class="form-group">
+                    <label>Password:</label>
+                    <input type="password" id="password" class="form-control" value="admin123">
+                </div>
+                <button type="submit" class="btn btn-primary">Login (Protected)</button>
+            </form>
+        </div>
+        
+        <div class="col-md-6">
+            <h4>Unprotected Form (simulated attack)</h4>
+            <form id="unprotectedForm">
+                <div class="form-group">
+                    <label>Username:</label>
+                    <input type="text" id="username2" class="form-control" value="admin">
+                </div>
+                <div class="form-group">
+                    <label>Password:</label>
+                    <input type="password" id="password2" class="form-control" value="admin123">
+                </div>
+                <button type="submit" class="btn btn-danger">Login (Unprotected - Will Fail)</button>
+            </form>
+        </div>
+    </div>
+    
+    <div class="mt-4">
+        <h4>Results:</h4>
+        <pre id="results" class="bg-light p-3"></pre>
+    </div>
+    
+    <div class="mt-4">
+        <button class="btn btn-info" onclick="getCsrfToken()">Get New CSRF Token</button>
+        <button class="btn btn-warning" onclick="clearResults()">Clear Results</button>
+        <a class="btn btn-default" href="login.php">Back to Login</a>
+    </div>
+</div>
+
+<script>
+let csrfToken = '';
+
+async function getCsrfToken() {
+    try {
+        const response = await fetch('api_csrf.php');
+        const data = await response.json();
+        csrfToken = data.token;
+        logResult('CSRF Token obtained: ' + csrfToken.substring(0, 20) + '...');
+    } catch (e) {
+        logResult('Failed to get CSRF token: ' + e.message);
+    }
+}
+
+function logResult(message) {
+    const results = document.getElementById('results');
+    const timestamp = new Date().toLocaleTimeString();
+    results.textContent += `[${timestamp}] ${message}\n`;
+    results.scrollTop = results.scrollHeight;
+}
+
+function clearResults() {
+    document.getElementById('results').textContent = '';
+}
+
+// Protected form submission
+document.getElementById('protectedForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    if (!csrfToken) {
+        await getCsrfToken();
+    }
+    
+    if (!csrfToken) {
+        logResult('ERROR: No CSRF token available');
+        return;
+    }
+    
+    try {
+        const response = await fetch('api_login.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': csrfToken
+            },
+            body: JSON.stringify({
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value,
+                csrf_token: csrfToken
+            })
+        });
+        
+        const result = await response.json();
+        if (response.ok) {
+            logResult('SUCCESS: Protected login successful - ' + JSON.stringify(result));
+        } else {
+            logResult('ERROR: Protected login failed - ' + JSON.stringify(result));
+        }
+    } catch (e) {
+        logResult('ERROR: Protected login exception - ' + e.message);
+    }
+});
+
+// Unprotected form submission (simulated attack)
+document.getElementById('unprotectedForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    try {
+        const response = await fetch('api_login.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+                // No CSRF token - this will fail
+            },
+            body: JSON.stringify({
+                username: document.getElementById('username2').value,
+                password: document.getElementById('password2').value
+                // No csrf_token - this will fail
+            })
+        });
+        
+        const result = await response.json();
+        if (response.ok) {
+            logResult('SUCCESS: Unprotected login successful - ' + JSON.stringify(result));
+        } else {
+            logResult('ERROR: Unprotected login failed (expected) - ' + JSON.stringify(result));
+        }
+    } catch (e) {
+        logResult('ERROR: Unprotected login exception - ' + e.message);
+    }
+});
+
+// Initialize CSRF token on page load
+document.addEventListener('DOMContentLoaded', function() {
+    getCsrfToken();
+});
+</script>
+</body>
+</html>
